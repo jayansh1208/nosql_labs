@@ -1,0 +1,36 @@
+# Python environments
+.venv/
+venv/
+env/
+
+# Python cache and test files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Secrets and environment variables
+.env
+.env.*
+!.env.example
+
+# Local databases and generated reports
+*.db
+*.sqlite
+*.sqlite3
+threatguard-ai/scanner-report.json
+
+# Editors and operating system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Dependencies and build files
+node_modules/
+dist/
+build/
+
+# Temporary and backup files
+*.bak

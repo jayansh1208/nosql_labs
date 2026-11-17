@@ -1,0 +1,81 @@
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: threatguard-mongo
+    restart: unless-stopped
+    ports:
+      - "27030:27017"
+    environment:
+      MONGO_INITDB_DATABASE: threatguard
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: threatguard-backend
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DB: threatguard
+      FASTAPI_HOST: 0.0.0.0
+      FASTAPI_PORT: 8000
+      APP_ENV: ${APP_ENV:-development}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in your environment or .env before starting ThreatGuard}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRY_MINUTES: ${JWT_EXPIRY_MINUTES:-60}
+      EMBEDDING_PROVIDER: sentence_transformers
+      EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+      EMBEDDING_DEVICE: cpu
+      EMBEDDING_CACHE_DIR: /root/.cache/threatguard/models
+      KB_MAX_UPLOAD_BYTES: 10485760
+      KB_CHUNK_SIZE: 1000
+      KB_CHUNK_OVERLAP: 150
+      KB_RETRIEVAL_TOP_K: 5
+      KB_MAX_QUERY_CHARS: 1000
+      KB_ATLAS_VECTOR_SEARCH_ENABLED: "false"
+      KB_ATLAS_VECTOR_INDEX: kb_chunks_vector
+      AI_PROVIDER: ${AI_PROVIDER:-gemini}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      AI_TEMPERATURE: ${AI_TEMPERATURE:-0.2}
+      AI_MAX_TOKENS: ${AI_MAX_TOKENS:-1000}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-60}
+      AI_HISTORY_WINDOW: ${AI_HISTORY_WINDOW:-8}
+      AI_CONTEXT_MAX_CHARS: ${AI_CONTEXT_MAX_CHARS:-8000}
+      AI_MAX_MESSAGE_CHARS: ${AI_MAX_MESSAGE_CHARS:-4000}
+      AI_RATE_LIMIT_PER_MINUTE: ${AI_RATE_LIMIT_PER_MINUTE:-10}
+      CHAT_RAG_ENABLED: ${CHAT_RAG_ENABLED:-true}
+      CHAT_RAG_TOP_K: ${CHAT_RAG_TOP_K:-5}
+      CHAT_RAG_MIN_SIMILARITY: ${CHAT_RAG_MIN_SIMILARITY:-0.30}
+      CHAT_SCANNER_CONTEXT_LIMIT: ${CHAT_SCANNER_CONTEXT_LIMIT:-5}
+    volumes:
+      - embedding_cache:/root/.cache/threatguard/models
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: threatguard-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "8501:8501"
+
+volumes:
+  mongo_data:
+  embedding_cache:
+
+
